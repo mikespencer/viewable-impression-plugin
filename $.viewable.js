@@ -2,20 +2,26 @@
   * @fileoverview viewable impression plugin for jQuery for use on washingtonpost.com
   * @Author michael.spencer@washingtonpost.com (Mike Spencer)
   */
-(function($) {
+(function($, wpAd) {
 
   'use strict';
   
-  if($ && window.wpAd){
-  
-    var ads = [],
-      scrollCheck=true,
-      timer;
+  if($ && wpAd){
 
     $.fn.viewableImpression = function(options){
-      
+    
+      var ads = [],
+        scrollCheck=true,
+        rndm=Math.floor(Math.random()*1E7),
+        timer;
+
       options = options || {};
       options.timeVisible = options.timeVisible || 1000;
+      
+      function init(){
+        addEventListeners();
+        onWindowScroll();
+      }
       
       function onWindowScroll(){
         if(scrollCheck){
@@ -30,24 +36,28 @@
       function checkIfVisible(){
         var $win = $(window),
           wTop = $win.scrollTop(),
-          wBottom = wTop + $win.height();
+          wBottom = wTop + $win.height(),
+          cleanupFlag = false;
 
         $.each(ads, function(i, el) {
           if(el){
             var $el = $(el),
               height = $el.height(),
               halfHeight = height/2,
-              midPoint = $el.offset().top + halfHeight; 
+              midPoint = $el.offset().top + halfHeight;
 
             if(midPoint > wTop && midPoint < wBottom){
               renderAd(ads[i]);
               ads[i] = false;
+              cleanupFlag = true;
             }
           }
         });
-        ads = cleanupAdArray();
+        if(cleanupFlag){
+          ads = cleanupAdArray();
+        }
       }
-      
+
       function cleanupAdArray(){
         var temp = ads, l= temp.length, rv = [];
         while(l--){
@@ -56,36 +66,41 @@
           }
         }
         if(!rv.length){
-          try{if(wpAd.flags.debug){window.console.log('all viewable impressions rendered');}}catch(e){}
-          $(window).unbind('scroll.wpAd_viewable resize.wpAd_viewable');
+          removeEventListeners();
         }
         return rv;
       }
-      
+
       function renderAd(slug){
         var template = wpAd.templates[slug.id.split('slug_')[1]];
         if(template && template.briefcase){
-          //remove set height (added initially to measure midpoint of ad container):
-          $(slug).css({height:''});
-          wpAd.exec.adi(template.briefcase);
+          $(slug).css({height:''}); //remove set height (added initially to measure midpoint of ad container):
+          wpAd.exec.adi(template.briefcase); //render iframe ad
         }
       }
-      
-      $(window).bind('scroll.wpAd_viewable resize.wpAd_viewable', onWindowScroll);
 
-      return this.each(function(){
-        ads.push(this);
+      function addEventListeners(){
+        $(window).bind('scroll.wpAd_viewable_' + rndm + ' resize.wpAd_viewable_' + rndm, onWindowScroll);
+      }
+      
+      function removeEventListeners(){
+        $(window).unbind('scroll.wpAd_viewable_' + rndm + ' resize.wpAd_viewable_' + rndm);
+      }
+      
+      init();
+      
+      return this.each(function(i, el){
+        ads.push(el);
       });
+
     };
-    
+
     $(function(){
-      //wpAd.viewableImpressions Array generated via generic_ad.js:
-      if(wpAd.viewableImpressions){
-        //initialise the plugin:
-        $(wpAd.viewableImpressions).viewableImpression();
+      if(wpAd.viewableImpressions){ //wpAd.viewableImpressions Array generated via generic_ad.js
+        $(wpAd.viewableImpressions).viewableImpression() //initialise the plugin
       }
     });
 
   }
 
-})(window.jQuery);
+})(window.jQuery, window.wpAd);
