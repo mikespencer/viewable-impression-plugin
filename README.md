@@ -6,5 +6,5 @@ jQuery plugin that renders an ad only when 50% of it is visible in the viewport 
 
 ####options (with defaults):
     {
-      timeVisible: 1000ms
+      timeVisible: 1000
     } 
