@@ -15,12 +15,14 @@
         rndm=Math.floor(Math.random()*1E7),
         timer;
 
-      options = options || {};
-      options.timeVisible = options.timeVisible || 1000;
+      options = $.extend({
+        timeVisible: 1000,
+        fadeInSpeed: 500
+      }, options);
       
       function init(){
         addEventListeners();
-        onWindowScroll();
+        setTimeout(onWindowScroll, 500);
       }
       
       function onWindowScroll(){
@@ -30,7 +32,7 @@
             scrollCheck = true;
             checkIfVisible();
           }, options.timeVisible);
-        }
+        }        
       }
 
       function checkIfVisible(){
@@ -76,6 +78,9 @@
         if(template && template.briefcase){
           $(slug).css({height:''}); //remove set height (added initially to measure midpoint of ad container):
           wpAd.exec.adi(template.briefcase); //render iframe ad
+          if(options.fadeInSpeed){
+            $(slug).hide().fadeIn(options.fadeInSpeed);
+          }
         }
       }
 
@@ -97,7 +102,7 @@
 
     $(function(){
       if(wpAd.viewableImpressions){ //wpAd.viewableImpressions Array generated via generic_ad.js
-        $(wpAd.viewableImpressions).viewableImpression() //initialise the plugin
+        $(wpAd.viewableImpressions).viewableImpression(); //initialise the plugin
       }
     });
 
