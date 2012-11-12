@@ -11,6 +11,7 @@ jQuery plugin that renders an ad only when 50% of it is visible in the viewport 
     } 
     
 ####callback (optional):
-callback function to be called when the element is determined as viewable. Passed 
-one argument, which is the target element. If callback is omitted, the default
-behaviour of making the placeAd2 call and displaying the ad is executed.
+A callback function to be called when each element is determined as viewable. 
+This callback function is passed one argument, which is the target element as a 
+DOM Element. If callback is omitted, the default behaviour of making the 
+placeAd2 call and displaying the ad is executed.
