@@ -13,9 +13,10 @@
       var ads = [],
         scrollCheck=true,
         rndm=Math.floor(Math.random()*1E7),
-        callback=callback || renderAd,
         timer;
-
+      
+      callback = callback || renderAd;
+      
       options = $.extend({
         timeVisible: 1000,
         fadeInSpeed: 500
