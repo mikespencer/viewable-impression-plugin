@@ -8,11 +8,12 @@
   
   if($ && wpAd){
 
-    $.fn.viewableImpression = function(options){
+    $.fn.viewableImpression = function(options, callback){
     
       var ads = [],
         scrollCheck=true,
         rndm=Math.floor(Math.random()*1E7),
+        callback=callback || renderAd,
         timer;
 
       options = $.extend({
@@ -49,7 +50,8 @@
               midPoint = $el.offset().top + halfHeight;
 
             if(midPoint > wTop && midPoint < wBottom){
-              renderAd(ads[i]);
+              
+              callback(ads[i]);
               ads[i] = false;
               cleanupFlag = true;
             }
@@ -99,12 +101,6 @@
       });
 
     };
-
-    $(function(){
-      if(wpAd.viewableImpressions){ //wpAd.viewableImpressions Array generated via generic_ad.js
-        $(wpAd.viewableImpressions).viewableImpression(); //initialise the plugin
-      }
-    });
 
   }
 

@@ -1,4 +1,4 @@
-/*global commercialNode:true,wp_meta_data:true,escape,unescape,TWP,estNowWithYear,dfpcomp,spec_ord,console*/
+/*global commercialNode:true,wp_meta_data:true,escape,unescape,TWP,estNowWithYear,dfpcomp,spec_ord,console,$*/
 var wpAd, placeAd2;
 
 (function (win, doc, undefined) {
@@ -8,20 +8,23 @@ var wpAd, placeAd2;
   wpAd = {
     //this is function is called on the FIRST placeAd2 call only
     init: function () {
+      if(!win.jQuery){
+        wpAd.tools.writeScript('//js.washingtonpost.com/wpost/js/combo?token=20121010232000&c=true&m=true&context=eidos&r=/jquery-1.7.1.js');
+      }
       if(typeof wpAd.config.init === 'function') {
         wpAd.config.init();
       }
       wpAd.cache.init();
     },
     exec: {
-      /*viewable impression functionality added*/
       vi: function(){
         if(!wpAd.viewableImpressions){
-          if(!win.jQuery){
-            wpAd.tools.writeScript('https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js');
+          wpAd.viewableImpressions = [];
+          if(!$.fn.viewableImpression){
+            wpAd.tools.loadScript('http://js.washingtonpost.com/wp-srv/ad/$.viewable.js', wpAd.tools.initViewableImpressions);
+          } else {
+            wpAd.tools.initViewableImpressions();
           }
-          wpAd.viewableImpressions=wpAd.viewableImpressions || [];
-          wpAd.tools.addScript('$.viewable.js');
         }
         var slug = doc.getElementById('slug_' + wpAd.briefcase.pos);
         if(slug){
@@ -140,7 +143,7 @@ var wpAd, placeAd2;
           scripts = slug.getElementsByTagName('script');
           s = scripts.length;
           while(s--) {
-            if(scripts[s].src && /serving-sys.com|mediaplex.com/i.test(scripts[s].src)) {
+            if(scripts[s].src && /serving-sys.com/i.test(scripts[s].src)) {
               scripts[s].src = "#";
             }
           }
@@ -184,6 +187,16 @@ var wpAd, placeAd2;
           }
         }
         return el;
+      },
+      addPixel: function(url){
+        var i = doc.createElement('img');
+        i.src = url;
+        i.width = '1';
+        i.height = '1';
+        i.alt = arguments[1] || '';
+        i.style.display = 'none';
+        i.style.border = '0';
+        doc.body.appendChild(i);
       },
       addScript: function(){
         var l = arguments.length,
@@ -287,11 +300,18 @@ var wpAd, placeAd2;
           }
           return true;
         },
+        test: function(template_value, obj){
+          return typeof template_value === 'function' ? template_value() : template_value;
+        },
         where: function (template_value, obj) {
-          if(/^\!/.test(template_value) && commercialNode.match(template_value.split('!')[1])) {
-            //this template will fail and the ad will not show
-            this.check = false;
-            return false;
+          if(/^\!/.test(template_value)) {
+            if(commercialNode.match(template_value.split('!')[1])){
+              //this template will fail and the ad will not show
+              this.check = false;
+              return false;
+            } else {
+              return true;
+            }
           }
           return commercialNode.match(template_value) ? true : false;
         },
@@ -348,6 +368,23 @@ var wpAd, placeAd2;
         }
         return temp;
       },
+      convertOldPosValue: function(pos){
+        var convert = {
+          'ad1': 'leaderboard',
+          'ad2': 'leaderboard_2',
+          'ad3': 'skyscraper',
+          'ad6': 'flex_ss_bb_hp',
+          'ad7': 'featurebar',
+          'ad14': 'tiffany_tile',
+          'ad16': 'flex_bb_hp',
+          'ad19': '336x35',
+          'ad20': 'bigbox',
+          'ad43': 'pushdown',
+          'ad44': 'extra_bb',
+          'ad45': 'deal'
+        };
+        return convert[pos] ? convert[pos] : pos;
+      },
       dcFileType: function () {
         var types = {
           'adj': 'adj',
@@ -359,8 +396,11 @@ var wpAd, placeAd2;
         };
         return types[wpAd.briefcase.delivery] ? types[wpAd.briefcase.delivery] : 'adi';
       },
+      dcnode: function(){
+        return wpAd.flags.dcnode;
+      },
       dcUrl: function () {
-        return 'http://ad.doubleclick.net/' + (/n701/i.test(location.search) ? 'N701/' : '') + wpAd.tools.dcFileType() + '/' + wpAd.constants.wpniSite + '.' + wpAd.briefcase.where + ';' + wpAd.exec.keysval() + '?';
+        return 'http://ad.doubleclick.net/' + (wpAd.flags.network_id ? wpAd.flags.network_id + '/' : '') + wpAd.tools.dcFileType() + '/' + wpAd.constants.site + '.' + wpAd.briefcase.where + ';' + wpAd.exec.keysval() + '?';
       },
       debug: function () {
         if(wpAd.flags.debug) {
@@ -395,30 +435,22 @@ var wpAd, placeAd2;
           'fif': 'fif',
           'pfadx': 'pfadx',
           'pfadxjs': 'pfadxjs',
-          /*viewable impression functionality added*/
           'vi': 'vi'
         };
         delivery = delivery.toLowerCase();
         return types[delivery] ? types[delivery] : 'adj';
       },
       demoAds: function () {
-        var dcnode = wpAd.tools.urlCheck('dcnode', {
-          'type': 'variable'
-        }),
-          demoAds = wpAd.flags.demoAds.replace(/;$/, '').split(';'),
+        var demoAds = wpAd.flags.demoAds.replace(/;$/, '').split(';'),
           l = demoAds.length,
           obj = {};
-
         while(l--) {
-          obj[demoAds[l]] = {};
-        }
-        if(dcnode && dcnode !== '') {
-          commercialNode = dcnode;
+          obj[wpAd.tools.convertOldPosValue(demoAds[l])] = {};
         }
         return obj;
       },
       escapeScriptTags: function (str) {
-        return str.replace(/<\/script/g, '<\/script');
+        return str.replace(/<\/script/gi, '<\/script');
       },
       estNowWithYear: typeof estNowWithYear !== 'undefined' ? estNowWithYear : (function () {
         var a = new Date(),
@@ -489,7 +521,14 @@ var wpAd, placeAd2;
 
         return i;
       },
-      interstitial : function(){
+      initViewableImpressions: function(){
+        $(function(){
+          if(wpAd.viewableImpressions){ //wpAd.viewableImpressions Array
+            $(wpAd.viewableImpressions).viewableImpression(); //initialise the plugin
+          }
+        });
+      },
+      interstitial: function(){
         if(doc.cookie && !/no_interstitials|reload\=true/gi.test(location.search)){
           var name = 'wp_pageview', 
           cookieVal = wpAd.tools.getCookie(name), 
@@ -497,14 +536,35 @@ var wpAd, placeAd2;
           time = new Date(parseInt(new Date().getTime(), 10) + 432E5).toString();
           if(cookieVal){
             rv = Number(cookieVal)%3 ? false : true;
-            wpAd.tools.setCookie(name, Number(cookieVal) + 1, time, '/', wpAd.constants.wpniDomain);
+            wpAd.tools.setCookie(name, Number(cookieVal) + 1, time, '/', wpAd.constants.domain);
           } else {
-            wpAd.tools.setCookie(name, '1', time, '/', wpAd.constants.wpniDomain);
+            wpAd.tools.setCookie(name, '1', time, '/', wpAd.constants.domain);
           }
 
           return rv;
         }
         return false;
+      },
+      //async load script with optional callback function as 2nd arg
+      //potentially replace wpAd.tools.addScript with this
+      loadScript: function(src) {
+        var s = doc.createElement('script'),
+          target = doc.body || doc.getElementsByTagName('head')[0] || false,
+          callback = arguments[1] || false;
+        if(target){
+          s.type = 'text/' + (src.type || 'javascript');
+          s.src = src.src || src;
+          if(typeof callback === 'function'){
+            s.onreadystatechange = s.onload = function() {
+              var state = s.readyState;
+              if (!callback.done && (!state || /loaded|complete/.test(state))) {
+                callback.done = true;
+                callback();
+              }
+            };
+          }
+          target.appendChild(s);
+        }
       },
       log: function () {
         try {
@@ -540,8 +600,12 @@ var wpAd, placeAd2;
         wpAd.briefcase.pos_override = 0;
         if(/\|/.test(what)) {
           what = what.split('|');
-          wpAd.briefcase.pos_override = what[1];
-          what = what[0];
+          if(!wpAd.config.adtypes[what.join('_')]){
+            wpAd.briefcase.pos_override = what[1];
+            what = what[0];
+          } else{
+            what = what.join('_');
+          }
         }
         return what;
       },
@@ -641,9 +705,8 @@ var wpAd, placeAd2;
           if(wpAd.templates[wpAd.briefcase.pos].id){
             wpAd.briefcase.id = wpAd.templates[wpAd.briefcase.pos].id;
           }
-          // hack to fix double ad calls - ad current ad type to array:
-          /*if wpAd.tools.urlCheck(/cleanScriptTags/)*/
-          if(wpAd.flags.testEnv && wpAd.flags.IE) {
+          // hack to fix double ad calls - add current ad type to array:
+          if(wpAd.flags.IE) {
             wpAd.tools.adsToBeCleaned.push(wpAd.briefcase.what);
           }
           return true;
@@ -668,13 +731,15 @@ var wpAd, placeAd2;
           VideoStory: "video"
         },
         subsection: function(){
-          return win.wp_meta_data && wp_meta_data.subsection ? '/' + wp_meta_data.subsection.toString() : '';
+          return win.wp_meta_data && wp_meta_data.subsection ? '/' + this.valid(wp_meta_data.subsection) : '';
         },
         name: function () {
-          return wp_meta_data.contentName ? '/' + this.valid() + wp_meta_data.contentName : '';
+          return wp_meta_data.contentName ? '/' + this.valid(wp_meta_data.contentName) : '';
         },
-        valid: function () {
-          return(wp_meta_data.contentName[0].charAt(0).match(/[^a-z]/gi)) ? 'c' : '';
+        valid: function (a) {
+          a = typeof a === 'string' ? a : a[0];
+          a = a.replace(/[^0-9a-zA-Z_\-]/g, '');
+          return a.charAt(0).match(/[^a-z]/gi) ? 'c' + a : a;
         },
         exec: function () {
           var a = wp_meta_data.contentType;
@@ -765,7 +830,7 @@ var wpAd, placeAd2;
       },
       poe: function () {
         return wpAd.cache.hasOwnProperty('poe') ? wpAd.cache.poe : (function () {
-          var name = wpAd.constants.wpniSite + '_poe',
+          var name = wpAd.constants.site + '_poe',
             cookieVal = wpAd.tools.getCookie(name);
 
           wpAd.cache.poe = ['no'];
@@ -804,11 +869,11 @@ var wpAd, placeAd2;
       kw: function () {
         return wpAd.cache.hasOwnProperty('kw') ? wpAd.cache.kw : (function () {
           var obj = {
-            energy: ['energy'],
-            re: ['builder', 'condo', 'home', 'homeowner', 'housing', 'mortgage', 'property', 'real estate', 'realtor', 'refinance', 'neighborhood']
-          },
+              energy: ['energy'],
+              re: ['builder', 'condo', 'home', 'homeowner', 'housing', 'mortgage', 'property', 'real estate', 'realtor', 'refinance', 'neighborhood']
+            },
             key;
-
+            
           wpAd.cache.kw = [];
           if(wpAd.flags.test_ads) {
             wpAd.cache.kw.push('test_' + wpAd.flags.test_ads);
@@ -821,6 +886,15 @@ var wpAd, placeAd2;
           return wpAd.cache.kw;
         })();
       },
+      testads: function(){
+        return wpAd.cache.hasOwnProperty('testads') ? wpAd.cache.testads : (function () {
+          wpAd.cache.testads = [];
+          if(wpAd.flags.testads){
+            wpAd.cache.testads.push(wpAd.flags.testads);
+          }
+          return wpAd.cache.testads;
+        })();
+      },
       del: function () {
         var del = wpAd.briefcase.delivery,
           types = {
@@ -830,7 +904,6 @@ var wpAd, placeAd2;
             'fif': 'js',
             'pfadx': 'pfadx',
             'pfadxjs': 'pfadxjs',
-            /*viewable impression functionality added*/
             'vi': 'iframe'
           };
         if(wpAd.exec[del] && types.hasOwnProperty(del)) {
@@ -858,7 +931,7 @@ var wpAd, placeAd2;
             obj = {
                 natural_disaster : ['shell', 'exxon', 'citgo', 'bp', 'chevron', 'hess', 'sunoco', 'disaster', 'fire', 'explosion', 'oil', 'coal', 'death', 'dead', 'quake', 'earthquake', 'tsunami', 'tornado', 'hurricane', 'flood','bed bug','infestation'],
                 human_disaster : ['vatican', 'spanair', 'aground', 'rescue', 'attack', 'disaster', 'explosion', 'war', 'hostage', 'terror', 'terrorist', 'bomb', 'blast', 'mining', 'miner', 'violence', 'riot', 'crash', '9/11', 'sept. 11', 'september 11'],
-                financial_crisis : ['corrupt', 'goldman', 'aig', 'foreclosure', 'enron', 'sec', 'mortgage', 'Insurance', 'health', 'bank', 'wall street', 'protest', 'labor strike', 'union strike', 'labor issue', 'union issue' ],
+                financial_crisis : ['corrupt', 'goldman', 'aig', 'foreclosure', 'enron', 'sec', 'mortgage', 'Insurance', 'health', 'bank', 'wall street', 'protest', 'labor strike', 'union strike', 'labor issue', 'union issue', 'teacher strike', 'teachers strike', 'election'],
                 inappropriate : ['gambling','sex','alcohol','pornography']
             },
             key;
@@ -975,7 +1048,7 @@ var wpAd, placeAd2;
         return wpAd.tile;
       },
       ord: function () {
-        if(wpAd.briefcase.delivery !== 'ajax' || !wpAd.templates[wpAd.briefcase.pos].briefcase) {
+        if(wpAd.briefcase.delivery !== 'ajax' || !wpAd.templates[wpAd.briefcase.what].briefcase) {
           return wpAd.cache.hasOwnProperty('ord') ? wpAd.cache.ord : (function () {
             wpAd.cache.ord = typeof spec_ord !== 'undefined' ? spec_ord : Math.floor(Math.random() * 1E18);
             return wpAd.cache.ord;
@@ -988,7 +1061,6 @@ var wpAd, placeAd2;
   };
 
   placeAd2 = function(where, what, delivery, onTheFly) {
-
     if(wpAd.flags.debugAds){
       try {
         console.log('\n');
@@ -997,7 +1069,7 @@ var wpAd, placeAd2;
       } catch(e) {}
     }
 
-    if(wpAd.flags.no_ads) {
+    if(wpAd.flags.no_ads || !wpAd.config || !wpAd.config.adtypes) {
       return false;
     }
 
@@ -1018,8 +1090,7 @@ var wpAd, placeAd2;
 
     what = wpAd.tools.posOverride(what);
 
-    //need to figure out what to do with this monstrosity...
-    if(typeof what === 'undefined' || typeof wpAd === 'undefined' || !wpAd.config || !wpAd.config.adtypes || !wpAd.config.adtypes[what] || !wpAd.constants.wpniSite) {
+    if(!wpAd.config.adtypes[what]) {
       return false;
     }
 
@@ -1030,10 +1101,10 @@ var wpAd, placeAd2;
     wpAd.briefcase.pos = wpAd.briefcase.what + (wpAd.briefcase.pos_override ? '_' + wpAd.briefcase.pos_override : '');
 
     //a bit hacky but temporary, until we phase out tile flight manager for opening/closing tiffany tiles:
-    if(wpAd.briefcase.pos === 'tiffany_tile' && wpAd.constants && wpAd.constants.wpniSite === 'wpni' && !/js_tiff/.test(location.search)) {
-      //would be interesting to try figure out a way to just include tile_flights.js, and integrate it into  wpAd.templates...
-      wpAd.tools.writeScript('http://js.washingtonpost.com/wp-srv/ad/tiffany_manager.js', 'http://js.washingtonpost.com/wp-srv/ad/tile_flights.js');
-
+    if(wpAd.briefcase.pos === 'tiffany_tile' && wpAd.constants && wpAd.constants.site === 'wpni' && !/js_tiff/.test(location.search)) {
+      wpAd.tools.loadScript('http://js.washingtonpost.com/wp-srv/ad/tiffany_manager.js', function(){
+        wpAd.tools.loadScript('http://js.washingtonpost.com/wp-srv/ad/tile_flights.js');
+      });
       return false;
     }
 
@@ -1049,7 +1120,7 @@ var wpAd, placeAd2;
 
       wpAd.tools.slugDisplay();
       wpAd.tools.debug();
-
+      
       //store briefcase object for reference:
       wpAd.templates[wpAd.briefcase.pos].briefcase = wpAd.briefcase;
     }
@@ -1073,13 +1144,16 @@ var wpAd, placeAd2;
   wpAd.flags = {
     debug: !!/debugAdCode/i.test(location.search),
     demoAds: wpAd.tools.urlCheck('demoAds', {type: 'variable'}),
+    dcnode: wpAd.tools.urlCheck('dcnode', {type: 'variable'}),
     test_ads: wpAd.tools.urlCheck('test_ads', {type: 'variable'}),
+    testads: wpAd.tools.urlCheck('testads', {type: 'variable'}),
     no_ads: !!/no_ads/.test(location.search),
     allAds: !!/allAds/i.test(location.search),
     IE: !!/msie/i.test(navigator.userAgent),
     test_fif: !!/test_fif/i.test(location.search),
     debugAds: !!/debugAds/i.test(location.search),
-    is_local: wpAd.tools.checkCookieVal('WPATC', 'C=1:')
+    is_local: wpAd.tools.checkCookieVal('WPATC', 'C=1:'),
+    network_id: wpAd.tools.urlCheck('network_id', {type: 'variable'}) || (wpAd.tools.urlCheck('network_id') ? 'N328291' : false)
   };
 
   //Legacy functions that may still have calls made to them (ie: urlCheck in tiffany_manager.js). Defining/Redefining them here:
@@ -1093,6 +1167,6 @@ var wpAd, placeAd2;
   win.wp_meta_data = win.wp_meta_data || {};
 
   //redefine commercialNode:
-  commercialNode = wpAd.tools.zoneBuilder.exec();
-  
+  commercialNode = !wpAd.flags.dcnode ? wpAd.tools.zoneBuilder.exec() : wpAd.tools.dcnode();
+
 })(window, document);
