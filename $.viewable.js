@@ -77,11 +77,11 @@
       }
       
       function addEventListeners(){
-        $(window).bind('scroll.wpAd_viewable_' + rndm + ' resize.wpAd_viewable_' + rndm, onWindowScroll);
+        $(window).bind('scroll.viewable_' + rndm + ' resize.viewable_' + rndm, onWindowScroll);
       }
       
       function removeEventListeners(){
-        $(window).unbind('scroll.wpAd_viewable_' + rndm + ' resize.wpAd_viewable_' + rndm);
+        $(window).unbind('scroll.viewable_' + rndm + ' resize.viewable_' + rndm);
       }
       
       init();
