@@ -8,9 +8,9 @@
   
   if($ && wpAd){
 
-    $.fn.viewableImpression = function(options, callback){
+    $.fn.viewable = function(options, callback){
     
-      var ads = [],
+      var elements = [],
         scrollCheck=true,
         rndm=Math.floor(Math.random()*1E7),
         timer;
@@ -43,7 +43,7 @@
           wBottom = wTop + $win.height(),
           cleanupFlag = false;
 
-        $.each(ads, function(i, el) {
+        $.each(elements, function(i, el) {
           if(el){
             var $el = $(el),
               height = $el.height(),
@@ -52,19 +52,19 @@
 
             if(midPoint > wTop && midPoint < wBottom){
               
-              callback(ads[i]);
-              ads[i] = false;
+              callback(elements[i]);
+              elements[i] = false;
               cleanupFlag = true;
             }
           }
         });
         if(cleanupFlag){
-          ads = cleanupAdArray();
+          elements = cleanupElements();
         }
       }
 
-      function cleanupAdArray(){
-        var temp = ads, l= temp.length, rv = [];
+      function cleanupElements(){
+        var temp = elements, l= temp.length, rv = [];
         while(l--){
           if(temp[l]){
             rv.push(temp[l]);
@@ -75,7 +75,7 @@
         }
         return rv;
       }
-
+      
       function renderAd(slug){
         var template = wpAd.templates[slug.id.split('slug_')[1]];
         if(template && template.briefcase){
@@ -98,7 +98,7 @@
       init();
       
       return this.each(function(i, el){
-        ads.push(el);
+        elements.push(el);
       });
 
     };

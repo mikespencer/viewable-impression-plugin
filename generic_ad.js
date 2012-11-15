@@ -20,8 +20,8 @@ var wpAd, placeAd2;
       vi: function(){
         if(!wpAd.viewableImpressions){
           wpAd.viewableImpressions = [];
-          if(!$.fn.viewableImpression){
-            wpAd.tools.loadScript('http://js.washingtonpost.com/wp-srv/ad/$.viewable.js', wpAd.tools.initViewableImpressions);
+          if(!$.fn.viewable){
+            wpAd.tools.loadScript('$.viewable.js', wpAd.tools.initViewableImpressions);
           } else {
             wpAd.tools.initViewableImpressions();
           }
@@ -524,14 +524,14 @@ var wpAd, placeAd2;
       initViewableImpressions: function(){
         $(function(){
           if(wpAd.viewableImpressions){ //wpAd.viewableImpressions Array
-            $(wpAd.viewableImpressions).viewableImpression(); //initialise the plugin
+            $(wpAd.viewableImpressions).viewable(); //initialise the plugin
           }
         });
       },
       interstitial: function(){
-        if(doc.cookie && !/no_interstitials|reload\=true/gi.test(location.search)){
+        if(doc.cookie && !wpAd.flags.hpRefresh && !wpAd.flags.no_interstitials){
           var name = 'wp_pageview', 
-          cookieVal = wpAd.tools.getCookie(name), 
+          cookieVal = wpAd.tools.getCookie(name),
           rv = true, 
           time = new Date(parseInt(new Date().getTime(), 10) + 432E5).toString();
           if(cookieVal){
@@ -914,7 +914,7 @@ var wpAd, placeAd2;
         }
       },
       dcopt: function () {
-        if(!wpAd.cache.dcopt && (wpAd.briefcase.delivery === 'adj' || wpAd.briefcase.delivery === 'fif')) {
+        if(!wpAd.cache.dcopt && (wpAd.briefcase.delivery === 'adj' || wpAd.briefcase.delivery === 'fif') && !wpAd.flags.no_interstitials) {
           wpAd.cache.dcopt = true;
           return ['ist'];
         } else {
@@ -1147,11 +1147,13 @@ var wpAd, placeAd2;
     dcnode: wpAd.tools.urlCheck('dcnode', {type: 'variable'}),
     test_ads: wpAd.tools.urlCheck('test_ads', {type: 'variable'}),
     testads: wpAd.tools.urlCheck('testads', {type: 'variable'}),
+    no_interstitials: !!wpAd.tools.urlCheck('no_interstitials'),
     no_ads: !!/no_ads/.test(location.search),
     allAds: !!/allAds/i.test(location.search),
     IE: !!/msie/i.test(navigator.userAgent),
     test_fif: !!/test_fif/i.test(location.search),
     debugAds: !!/debugAds/i.test(location.search),
+    hpRefresh: !!wpAd.tools.urlCheck('reload=true'),
     is_local: wpAd.tools.checkCookieVal('WPATC', 'C=1:'),
     network_id: wpAd.tools.urlCheck('network_id', {type: 'variable'}) || (wpAd.tools.urlCheck('network_id') ? 'N328291' : false)
   };
