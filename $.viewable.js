@@ -15,7 +15,7 @@
         rndm = Math.floor(Math.random()*1E7),
         timer;
       
-      callback = callback || renderAd;
+      callback = callback || function(a,b){};
       
       options = $.extend({
         timeVisible: 1000,
