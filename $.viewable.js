@@ -2,17 +2,17 @@
   * @fileoverview viewable impression plugin for jQuery for use on washingtonpost.com
   * @Author michael.spencer@washingtonpost.com (Mike Spencer)
   */
-(function($, wpAd) {
+(function($) {
 
   'use strict';
   
-  if($ && wpAd){
+  if($){
 
     $.fn.viewable = function(options, callback){
     
       var elements = [],
-        scrollCheck=true,
-        rndm=Math.floor(Math.random()*1E7),
+        scrollCheck = true,
+        rndm = Math.floor(Math.random()*1E7),
         timer;
       
       callback = callback || renderAd;
@@ -52,7 +52,7 @@
 
             if(midPoint > wTop && midPoint < wBottom){
               
-              callback(elements[i]);
+              callback(elements[i], options);
               elements[i] = false;
               cleanupFlag = true;
             }
@@ -76,17 +76,6 @@
         return rv;
       }
       
-      function renderAd(slug){
-        var template = wpAd.templates[slug.id.split('slug_')[1]];
-        if(template && template.briefcase){
-          $(slug).css({height:''}); //remove set height (added initially to measure midpoint of ad container):
-          wpAd.exec.adi(template.briefcase); //render iframe ad
-          if(options.fadeInSpeed){
-            $(slug).hide().fadeIn(options.fadeInSpeed);
-          }
-        }
-      }
-
       function addEventListeners(){
         $(window).bind('scroll.wpAd_viewable_' + rndm + ' resize.wpAd_viewable_' + rndm, onWindowScroll);
       }
@@ -105,4 +94,4 @@
 
   }
 
-})(window.jQuery, window.wpAd);
+})(window.jQuery);

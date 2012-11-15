@@ -524,7 +524,7 @@ var wpAd, placeAd2;
       initViewableImpressions: function(){
         $(function(){
           if(wpAd.viewableImpressions){ //wpAd.viewableImpressions Array
-            $(wpAd.viewableImpressions).viewable(); //initialise the plugin
+            $(wpAd.viewableImpressions).viewable({}, wpAd.tools.viewable_cb); //initialise the plugin
           }
         });
       },
@@ -712,6 +712,16 @@ var wpAd, placeAd2;
           return true;
         }
         return false;
+      },
+      viewable_cb: function(slug, options){
+        var template = wpAd.templates[slug.id.split('slug_')[1]];
+        if(template && template.briefcase){
+          $(slug).css({height:''}); //remove set height (added initially to measure midpoint of ad container):
+          wpAd.exec.adi(template.briefcase); //render iframe ad
+          if(options.fadeInSpeed){
+            $(slug).hide().fadeIn(options.fadeInSpeed);
+          }
+        }
       },
       writeScript: function(){
         var l = arguments.length, i = 0;
