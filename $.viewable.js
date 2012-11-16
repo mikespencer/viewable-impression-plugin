@@ -1,5 +1,5 @@
 /**
-  * @fileoverview viewable impression plugin for jQuery for use on washingtonpost.com
+  * @fileoverview viewable impression plugin for jQuery (1.7 min) for use on washingtonpost.com
   * @Author michael.spencer@washingtonpost.com (Mike Spencer)
   */
 (function($) {
@@ -12,7 +12,8 @@
     
       var elements = [],
         scrollCheck = true,
-        rndm = Math.floor(Math.random()*1E7),
+        rndm = Math.floor(Math.random()*1E9),
+        namespace = '.viewable_' + rndm,
         timer;
       
       callback = callback || function(a,b){};
@@ -77,11 +78,11 @@
       }
       
       function addEventListeners(){
-        $(window).bind('scroll.viewable_' + rndm + ' resize.viewable_' + rndm, onWindowScroll);
+        $(window).on('scroll' + namespace + ' resize' + namespace, onWindowScroll);
       }
       
       function removeEventListeners(){
-        $(window).unbind('scroll.viewable_' + rndm + ' resize.viewable_' + rndm);
+        $(window).off(namespace);
       }
       
       init();
