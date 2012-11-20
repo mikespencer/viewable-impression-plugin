@@ -20,5 +20,5 @@ This callback function is passed two arguments:
 This callback is _technically_ optional, however, nothing will happen when the 
 element is in view if it is omitted.
 
-
-##Last updated: Mike Spencer 11/20/12
+# 
+#####Last updated: Mike Spencer 11/20/12
