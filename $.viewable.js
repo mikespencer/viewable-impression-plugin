@@ -5,60 +5,68 @@
 (function($) {
 
   'use strict';
-  
+
   if($){
 
-    $.fn.viewable = function(options, callback){
-    
+    $.fn.viewable = function(options){
+
       var elements = [],
-        scrollCheck = true,
+        scrolling = false,
         rndm = Math.floor(Math.random()*1E9),
         namespace = '.viewable_' + rndm,
-        timer;
-      
-      callback = callback || function(a,b){};
-      
+        $window = $(window);
+
       options = $.extend({
-        timeVisible: 1000,
-        fadeInSpeed: 500
+        interval: 100,
+        offset: 0,
+        callback: function(a){}
       }, options);
-      
+
       function init(){
+        setTimeout(checkIfVisible, 500);
         addEventListeners();
-        setTimeout(onWindowScroll, 500);
       }
-      
-      function onWindowScroll(){
-        if(scrollCheck){
-          scrollCheck = false;
-          timer = setTimeout(function(){
-            scrollCheck = true;
+
+      function onScroll(e){
+        if(!scrolling){
+          scrolling = true;
+          setTimeout(function(){
+            scrolling = false;
             checkIfVisible();
-          }, options.timeVisible);
-        }        
+          }, options.interval);
+        }
+      }
+
+      function addEventListeners(){
+        $window.on('scroll' + namespace + ' resize' + namespace, onScroll);
+      }
+
+      function removeEventListeners(){
+        $window.off('scroll' + namespace + ' resize' + namespace);
       }
 
       function checkIfVisible(){
-        var $win = $(window),
-          wTop = $win.scrollTop(),
-          wBottom = wTop + $win.height(),
+        var wTop = $window.scrollTop(),
+          wBottom = wTop + $window.height(),
           cleanupFlag = false;
 
         $.each(elements, function(i, el) {
           if(el){
             var $el = $(el),
-              height = $el.height(),
+              height = $el.height() || 0,
               halfHeight = height/2,
+              top = $el.offset().top,
+              bottom = top + height,
               midPoint = $el.offset().top + halfHeight;
 
-            if(midPoint > wTop && midPoint < wBottom){
-              
-              callback(elements[i], options);
+            if((bottom + options.offset) >= wTop && (top - options.offset) <= wBottom){
+              options.callback.call(this, options);
               elements[i] = false;
               cleanupFlag = true;
             }
           }
         });
+
         if(cleanupFlag){
           elements = cleanupElements();
         }
@@ -76,17 +84,9 @@
         }
         return rv;
       }
-      
-      function addEventListeners(){
-        $(window).on('scroll' + namespace + ' resize' + namespace, onWindowScroll);
-      }
-      
-      function removeEventListeners(){
-        $(window).off(namespace);
-      }
-      
+
       init();
-      
+
       return this.each(function(i, el){
         elements.push(el);
       });

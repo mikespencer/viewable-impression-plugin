@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="eng">
+  <head>
+    <title>Test</title>
+
+    <style>
+      .placeholder, .spacer{
+        height: 600px;
+      }
+    </style>
+
+  </head>
+  <body>
+
+    <div class="placeholder one"></div>
+    <div class="spacer"></div>
+
+    <div class="placeholder two"></div>
+    <div class="spacer"></div>
+
+    <div class="placeholder three"></div>
+    <div class="spacer"></div>
+
+    <div class="placeholder four"></div>
+    <div class="spacer"></div>
+
+    <div class="placeholder five"></div>
+    <div class="spacer"></div>
+
+    <div class="placeholder six"></div>
+    <div class="spacer"></div>
+
+    <script src="bower_components/jquery/jquery.js"></script>
+    <script src="$.viewable.js"></script>
+
+    <script>
+      (function($){
+
+        var console = window.console || { log: function(){} };
+
+        $('div.placeholder').viewable({
+          offset: 1000,
+          callback: function(){
+            console.log('In view:', this);
+            $(this).addClass('viewed').append('<img src="http://placehold.it/300x600" />');
+          }
+        });
+
+      })(window.jQuery);
+    </script>
+
+  </body>
+</html>

@@ -2,24 +2,20 @@
 jQuery plugin that renders an ad only when 50% of it is visible in the viewport for a set time (default 1000ms).
 
 #Usage
-    $(selector).viewableImpression({option: key}, callback);
+    $(selector).viewableImpression(options);
 
-####options (with defaults):
+##options (with defaults):
     {
-      timeVisible: 1000,
-      fadeInSpeed: 500
+      interval: 100,
+      offset: 0,
+      callback: function(options){}
     }
 
-####callback (optional):
-A callback function to be called when each element is determined as viewable. 
-This callback function is passed two arguments:
+###interval
+Frequency to check scroll position on scroll. `100` will check at an interval of 100ms on scroll.
 
-1. Target element (DOM Element).
-2. The above options set (JSON Object).
+###offset
+Offsets when to fire the callback function. For example, `500` will call the callback function 500px before the element is in view.
 
-This callback is _technically_ optional, however, nothing will happen when the 
-element is in view if it is omitted.
-
-#   
-
-#####Last updated: Mike Spencer 11/20/12
+###callback
+Callback function that is called when the element is in view. Takes one argument (the options passed in). `this` in this scope references the DOM element that is now in view.
